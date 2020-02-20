@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 double prims(int v_count, double **adj){
     double sum = 0;
     int s_count = v_count;
-    // printf("%f, %d, %c", sum, s_count, '\n');
+    printf("%f, %d, %c", sum, s_count, '\n');
     int *visited = (int *)malloc(v_count * sizeof(int));
     s_tuple *s_list = (s_tuple *)malloc(v_count * sizeof(s_tuple));
     // printf("["); 
@@ -100,27 +100,27 @@ double prims(int v_count, double **adj){
         }
         else {
             s_list[i] = (s_tuple) { .v_num = i, 
-                        .low_edge = DBL_MAX};
+                        .low_edge = 4};
         }
-        // printf("(%d, %f)", s_list[i].v_num, s_list[i].low_edge);
+        printf("(%d, %f)", s_list[i].v_num, s_list[i].low_edge);
     }
-    // printf("] %c", '\n');
+    printf("] %c", '\n');
     while (s_count > 0){
         int min = findMin(s_count, s_list);
-        // s_count = s_count - 1;
-        // printf("I found a minimum at index %d which is equal to value %f%c", min, s_list[min].low_edge, '\n');
+
+        printf("I found a minimum at index %d which is equal to value %f%c", min, s_list[min].low_edge, '\n');
         sum = sum + s_list[min].low_edge;
-        // printf("CURRENT SUM: %f%c", sum, '\n');
+        printf("CURRENT SUM: %f%c", sum, '\n');
         int v_visited = s_list[min].v_num;
-        // printf("VISITED %d%c", v_visited, '\n');
+        printf("VISITED %d%c", v_visited, '\n');
         visited[v_count - s_count] = v_visited;
-        // printf("LOOK WHAT IS NOW IN VISITED %d%c", visited[v_count - s_count], '\n');
+        printf("LOOK WHAT IS NOW IN VISITED %d%c", visited[v_count - s_count], '\n');
         if (min != s_count - 1){
             s_list[min] = s_list[s_count - 1];
             
         }
         s_count = s_count - 1;
-        // printf("scount is now %d%c", s_count, '\n');
+        printf("scount is now %d%c", s_count, '\n');
         update_s_list(v_visited, s_count, s_list, adj);
 
     }
@@ -130,7 +130,7 @@ double prims(int v_count, double **adj){
 }
 
 int findMin(int s_count, s_tuple *s_list){
-    double n = DBL_MAX;
+    double n = 4;
     int index = -1;
     for (int i = 0; i < s_count; i++){
         if (s_list[i].low_edge < n){
@@ -138,13 +138,13 @@ int findMin(int s_count, s_tuple *s_list){
             index = i;
         }
     }
-    // printf("THE LOWEST EDGE HERE IS %f COMING FROM VERTEX %d%c", s_list[index].low_edge, s_list[index].v_num, '\n');
+    printf("THE LOWEST EDGE HERE IS %f COMING FROM VERTEX %d%c", s_list[index].low_edge, s_list[index].v_num, '\n');
     return index;
 }
 
 int update_s_list(int v_visited, int s_count, s_tuple *s_list, double **adj){
     for (int i = 0; i < s_count; i++){
-        // printf("I am comparing table value %f with adjacency value %f%c", s_list[i].low_edge, adj[v_visited][s_list[i].v_num], '\n');
+        printf("I am comparing table value %f with adjacency value %f%c", s_list[i].low_edge, adj[v_visited][s_list[i].v_num], '\n');
         if (adj[v_visited][s_list[i].v_num] < s_list[i].low_edge){
                         s_list[i].low_edge = adj[v_visited][s_list[i].v_num];
         }
@@ -159,15 +159,15 @@ int graph_type_dim(int v_count, int dim, double **adj){
     for (int i = 0; i < v_count; i++){
         if (dim != 0){
             if (dim >= 2){
-                v_array[i] = (point_4d) { .x = (double)rand() / (double)((unsigned)RAND_MAX + 1), 
-                                    .y = (double)rand() / (double)((unsigned)RAND_MAX + 1),
+                v_array[i] = (point_4d) { .x = (((double)random())/((double)(RAND_MAX))), 
+                                    .y = (((double)random())/((double)(RAND_MAX))),
                                     .z = 0, .l = 0  };
             }
             if (dim >= 3){
-                v_array[i].z = (double)rand() / (double)((unsigned)RAND_MAX + 1);
+                v_array[i].z = (((double)random())/((double)(RAND_MAX)));
             }
             if (dim == 4){
-                v_array[i].l = (double)rand() / (double)((unsigned)RAND_MAX + 1);
+                v_array[i].l = (((double)random())/((double)(RAND_MAX)));
             }
             printf("x = %f, y = %f, z = %f, l = %f%c", v_array[i].x, v_array[i].y, v_array[i].z, v_array[i].l, '\n');   
         } 
@@ -180,7 +180,7 @@ int graph_type_dim(int v_count, int dim, double **adj){
             } else {
                 double weight;
                 if (dim == 0){ 
-                    weight = (double)rand() / (double)((unsigned)RAND_MAX + 1); 
+                    weight = (((double)random())/((double)(RAND_MAX))); 
                 } 
                 else if (dim >= 2) {
                     double x_1 = v_array[i].x, y_1 = v_array[i].y, z_1 = v_array[i].z, l_1 = v_array[i].l;

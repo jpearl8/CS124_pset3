@@ -2,8 +2,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-
+#include <time.h>
+     
+   
 
 typedef struct point_4d {
    double x;
@@ -32,6 +33,8 @@ TODO:
 */
 
 int main(int argc, char** argv) {
+    
+    clock_t t = clock();
    if (argc != 5){
       printf("Usage: ./randmst int numpoints numtrials dimension");
       return 1;
@@ -48,24 +51,20 @@ int main(int argc, char** argv) {
    for (int i = 0; i < v_count; i++){
       adj[i] = (double *)malloc(v_count * sizeof(double)); 
    }
-   graph_type_dim(v_count, atoi(argv[4]), adj);
-//    printf("{ ");
-//    for (int i = 0; i < v_count; i ++){
-//        printf("{ ");
-//        for (int j = 0; j < v_count; j ++){
-//            printf(" %f, ", adj[i][j]);
-//        }
-//        printf(" } %c", '\n');
-//    }
-//    printf(" } %c", '\n');
-   
-   
+   graph_type_dim(v_count, atoi(argv[4]), adj);   
    double sum = prims(v_count, adj);
+   for (int i = 0; i < v_count; i++){
+      free(adj[i]); 
+   }
+   t = clock() - t;
    printf("SUM IS HERE %f%c", sum, '\n');
 
    printf("Vertex count: %d%c",  atoi(argv[2]), '\n');
    printf("Trial count: %d%c",  atoi(argv[3]), '\n');
    printf("Dimension count: %d%c", atoi(argv[4]), '\n');
+   double cpu_time_used = ((double) (t)) / CLOCKS_PER_SEC ;
+   printf("TIMES %f%c", cpu_time_used, '\n');
+   
    return 0;
    
 }
@@ -89,7 +88,6 @@ int main(int argc, char** argv) {
 double prims(int v_count, double **adj){
     double sum = 0;
     int s_count = v_count;
-    int *visited = (int *)malloc(v_count * sizeof(int));
     s_tuple *s_list = (s_tuple *)malloc(v_count * sizeof(s_tuple));
     for (int i = 0; i < v_count; i++){
         if (i == 0){
@@ -103,16 +101,16 @@ double prims(int v_count, double **adj){
     }
     while (s_count > 0){
         int min = findMin(s_count, s_list);
-        sum = sum + s_list[min].low_edge;
+        sum += s_list[min].low_edge;
         int v_visited = s_list[min].v_num;
-        visited[v_count - s_count] = v_visited;
         if (min != s_count - 1){
             s_list[min] = s_list[s_count - 1];
         }
-        s_count = s_count - 1;
+        s_count--;
         update_s_list(v_visited, s_count, s_list, adj);
 
     }
+    free(s_list);
     return sum;
 }
 
@@ -143,16 +141,17 @@ int graph_type_dim(int v_count, int dim, double **adj){
     point_4d *v_array = (point_4d *)malloc(v_count * sizeof(point_4d));
     for (int i = 0; i < v_count; i++){
         if (dim != 0){
-            if (dim >= 2){
-                v_array[i] = (point_4d) { .x = (double)rand() / (double)((unsigned)RAND_MAX + 1), 
-                                    .y = (double)rand() / (double)((unsigned)RAND_MAX + 1),
+            
+            v_array[i] = (point_4d) { .x = (((double)random())/((double)(RAND_MAX))), 
+                                    .y = (((double)random())/((double)(RAND_MAX))),
                                     .z = 0, .l = 0  };
-            }
+            
+            // (double)rand() / (double)((unsigned)RAND_MAX + 1)
             if (dim >= 3){
-                v_array[i].z = (double)rand() / (double)((unsigned)RAND_MAX + 1);
+                v_array[i].z = (((double)random())/((double)(RAND_MAX)));
             }
             if (dim == 4){
-                v_array[i].l = (double)rand() / (double)((unsigned)RAND_MAX + 1);
+                v_array[i].l = (((double)random())/((double)(RAND_MAX)));
             }
             // printf("x = %f, y = %f, z = %f, l = %f%c", v_array[i].x, v_array[i].y, v_array[i].z, v_array[i].l, '\n');   
         } 
@@ -165,9 +164,9 @@ int graph_type_dim(int v_count, int dim, double **adj){
             } else {
                 double weight;
                 if (dim == 0){ 
-                    weight = (double)rand() / (double)((unsigned)RAND_MAX + 1); 
+                    weight = (((double)random())/((double)(RAND_MAX))); 
                 } 
-                else if (dim >= 2) {
+                else {
                     double x_1 = v_array[i].x, y_1 = v_array[i].y, z_1 = v_array[i].z, l_1 = v_array[i].l;
                     double x_2 = v_array[j].x, y_2 = v_array[j].y, z_2 = v_array[j].z, l_2 = v_array[i].l;
                     weight = sqrt((pow((x_1 - x_2), 2)) + (pow((y_1 - y_2), 2)) + (pow((z_1 - z_2), 2)) + (pow((l_1 - l_2), 2)));
