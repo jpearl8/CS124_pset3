@@ -22,6 +22,7 @@ int graph_type_dim(int v_count, int dim, double** adj);
 double prims(int v_count, double **adj);
 int findMin(int v_count, s_tuple *s_list);
 int update_s_list(int v_visited, int s_count, s_tuple *s_list, double **adj);
+double prims_trials(int trials, int v_count, double **adj);
 
 /*
 TODO: 
@@ -36,7 +37,7 @@ int main(int argc, char** argv) {
     
     clock_t t = clock();
    if (argc != 5){
-      printf("Usage: ./randmst int numpoints numtrials dimension");
+      printf("Usage: ./randmst int numpoints numtrials dimension %c", '\n');
       return 1;
    } 
    int v_count = atoi(argv[2]);
@@ -47,23 +48,28 @@ int main(int argc, char** argv) {
    else if (v_count == 1){
        return 0;
    }
+   if (atoi(argv[3]) < 1){
+       printf("Invalid number of trials");
+       return 1;
+   }
    double *adj[v_count];
    for (int i = 0; i < v_count; i++){
       adj[i] = (double *)malloc(v_count * sizeof(double)); 
    }
    graph_type_dim(v_count, atoi(argv[4]), adj);   
-   double sum = prims(v_count, adj);
+   double sum_array = prims_trials(atoi(argv[3]), v_count, adj);
+//    double sum = prims(v_count, adj);
    for (int i = 0; i < v_count; i++){
       free(adj[i]); 
    }
    t = clock() - t;
-   printf("SUM IS HERE %f%c", sum, '\n');
-
-   printf("Vertex count: %d%c",  atoi(argv[2]), '\n');
+   printf("Vertex count: %d%cDimension count: %d%cMST total: %f%c",  
+           atoi(argv[2]), '\n', atoi(argv[4]), '\n', sum_array, '\n');
+  
    printf("Trial count: %d%c",  atoi(argv[3]), '\n');
-   printf("Dimension count: %d%c", atoi(argv[4]), '\n');
+   
    double cpu_time_used = ((double) (t)) / CLOCKS_PER_SEC ;
-   printf("TIMES %f%c", cpu_time_used, '\n');
+   printf("Time: %f seconds%c", cpu_time_used, '\n');
    
    return 0;
    
@@ -85,18 +91,57 @@ int main(int argc, char** argv) {
     remove (vertice, value from S)
     */
 
+double prims_trials(int trials, int v_count, double **adj){
+    double avg_sum = 0;
+    for (int i = 0; i < trials; i ++){
+        double sum = 0;
+        int s_count = v_count;
+        s_tuple *s_list = (s_tuple *)malloc(v_count * sizeof(s_tuple));
+        for (int i = 0; i < v_count; i++){
+            switch (i){
+                case 0: 
+                    s_list[i] = (s_tuple) { .v_num = i, 
+                            .low_edge = 0};
+                    break;
+                default:
+                    s_list[i] = (s_tuple) { .v_num = i, 
+                            .low_edge = 5};
+                    break;
+            }
+        }
+        while (s_count > 0){
+            int min = findMin(s_count, s_list);
+            sum += s_list[min].low_edge;
+            int v_visited = s_list[min].v_num;
+            if (min != s_count - 1){
+                s_list[min] = s_list[s_count - 1];
+            }
+            s_count--;
+            update_s_list(v_visited, s_count, s_list, adj);
+
+        }
+        free(s_list);
+        avg_sum += sum;
+    }
+    return (avg_sum / trials);
+}
+
+
+
 double prims(int v_count, double **adj){
     double sum = 0;
     int s_count = v_count;
     s_tuple *s_list = (s_tuple *)malloc(v_count * sizeof(s_tuple));
     for (int i = 0; i < v_count; i++){
-        if (i == 0){
-            s_list[i] = (s_tuple) { .v_num = i, 
+        switch (i){
+            case 0: 
+                s_list[i] = (s_tuple) { .v_num = i, 
                         .low_edge = 0};
-        }
-        else {
-            s_list[i] = (s_tuple) { .v_num = i, 
-                        .low_edge = 3};
+                break;
+            default:
+                s_list[i] = (s_tuple) { .v_num = i, 
+                        .low_edge = 5};
+                break;
         }
     }
     while (s_count > 0){
@@ -118,7 +163,7 @@ double prims(int v_count, double **adj){
 
 int findMin(int s_count, s_tuple *s_list){
     double n = s_list[0].low_edge;
-    int index = -1;
+    int index = 0;
     for (int i = 1; i < s_count; i++){
         if (s_list[i].low_edge < n){
             n = s_list[i].low_edge;
@@ -153,7 +198,6 @@ int graph_type_dim(int v_count, int dim, double **adj){
             if (dim == 4){
                 v_array[i].l = (((double)random())/((double)(RAND_MAX)));
             }
-            // printf("x = %f, y = %f, z = %f, l = %f%c", v_array[i].x, v_array[i].y, v_array[i].z, v_array[i].l, '\n');   
         } 
     }
         

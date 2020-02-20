@@ -2,8 +2,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-
+#include <time.h>
+     
+   
 
 typedef struct point_4d {
    double x;
@@ -12,15 +13,12 @@ typedef struct point_4d {
    double l;
 } point_4d;
 
-typedef struct s_tuple {
-    int v_num;
-    double low_edge;
-} s_tuple;
+
 
 int graph_type_dim(int v_count, int dim, double** adj);
 double prims(int v_count, double **adj);
-int findMin(int v_count, s_tuple *s_list);
-int update_s_list(int v_visited, int s_count, s_tuple *s_list, double **adj);
+int findMin(int s_count, double *s_weights);
+int update_s_list(int v_visited, int s_count, double *s_weights, int* s_vertices, double **adj);
 
 /*
 TODO: 
@@ -32,8 +30,10 @@ TODO:
 */
 
 int main(int argc, char** argv) {
+    
+    clock_t t = clock();
    if (argc != 5){
-      printf("Usage: ./randmst int numpoints numtrials dimension %c", '\n');
+      printf("Usage: ./randmst int numpoints numtrials dimension");
       return 1;
    } 
    int v_count = atoi(argv[2]);
@@ -48,24 +48,20 @@ int main(int argc, char** argv) {
    for (int i = 0; i < v_count; i++){
       adj[i] = (double *)malloc(v_count * sizeof(double)); 
    }
-   graph_type_dim(v_count, atoi(argv[4]), adj);
-   printf("{ ");
-   for (int i = 0; i < v_count; i ++){
-       printf("{ ");
-       for (int j = 0; j < v_count; j ++){
-           printf(" %f, ", adj[i][j]);
-       }
-       printf(" } %c", '\n');
-   }
-   printf(" } %c", '\n');
-   
-   
+   graph_type_dim(v_count, atoi(argv[4]), adj);   
    double sum = prims(v_count, adj);
+   for (int i = 0; i < v_count; i++){
+      free(adj[i]); 
+   }
+   t = clock() - t;
    printf("SUM IS HERE %f%c", sum, '\n');
 
    printf("Vertex count: %d%c",  atoi(argv[2]), '\n');
    printf("Trial count: %d%c",  atoi(argv[3]), '\n');
    printf("Dimension count: %d%c", atoi(argv[4]), '\n');
+   double cpu_time_used = ((double) (t)) / CLOCKS_PER_SEC ;
+   printf("TIMES %f%c", cpu_time_used, '\n');
+   
    return 0;
    
 }
@@ -89,68 +85,66 @@ int main(int argc, char** argv) {
 double prims(int v_count, double **adj){
     double sum = 0;
     int s_count = v_count;
-    printf("%f, %d, %c", sum, s_count, '\n');
-    int *visited = (int *)malloc(v_count * sizeof(int));
-    s_tuple *s_list = (s_tuple *)malloc(v_count * sizeof(s_tuple));
-    // printf("["); 
+    int *s_vertices = (int *)malloc(v_count * sizeof(int));
+    double *s_weights = (double *)malloc(v_count * sizeof(double));
     for (int i = 0; i < v_count; i++){
-        if (i == 0){
-            s_list[i] = (s_tuple) { .v_num = i, 
-                        .low_edge = 0};
+        s_vertices[i] = i;
+        switch (i){
+            case 0: 
+                s_weights[i] = 0;
+                break;
+            default:
+                s_weights[i] = 5;
+                break;
         }
-        else {
-            s_list[i] = (s_tuple) { .v_num = i, 
-                        .low_edge = 4};
-        }
-        printf("(%d, %f)", s_list[i].v_num, s_list[i].low_edge);
+  
     }
-    printf("] %c", '\n');
     while (s_count > 0){
-        int min = findMin(s_count, s_list);
+        int min = findMin(s_count, s_weights);
 
-        printf("I found a minimum at index %d which is equal to value %f%c", min, s_list[min].low_edge, '\n');
-        sum = sum + s_list[min].low_edge;
-        printf("CURRENT SUM: %f%c", sum, '\n');
-        int v_visited = s_list[min].v_num;
-        printf("VISITED %d%c", v_visited, '\n');
-        visited[v_count - s_count] = v_visited;
-        printf("LOOK WHAT IS NOW IN VISITED %d%c", visited[v_count - s_count], '\n');
+        sum += s_weights[min];
+
+        int v_visited = s_vertices[min];
         if (min != s_count - 1){
-            s_list[min] = s_list[s_count - 1];
+            s_vertices[min] = s_vertices[s_count - 1];
+            s_weights[min] = s_weights[s_count - 1];
             
+           
+
         }
+
         s_count = s_count - 1;
-        printf("scount is now %d%c", s_count, '\n');
-        update_s_list(v_visited, s_count, s_list, adj);
+        update_s_list(v_visited, s_count, s_weights, s_vertices, adj);
 
     }
-
-
+    free(s_vertices);
+    free(s_weights);
     return sum;
 }
 
-int findMin(int s_count, s_tuple *s_list){
-    double n = s_list[0].low_edge;
-    int index = 0;
+
+
+int findMin(int s_count, double *s_weights){
+    double n = s_weights[0];
+    int index = 0; //turn back to -1
     for (int i = 1; i < s_count; i++){
-        if (s_list[i].low_edge < n){
-            n = s_list[i].low_edge;
+
+        if (s_weights[i] <= n){
+            n = s_weights[i];
             index = i;
+
         }
     }
-    printf("THE LOWEST EDGE HERE IS %f COMING FROM VERTEX %d%c", s_list[index].low_edge, s_list[index].v_num, '\n');
+  
     return index;
 }
 
-
-int update_s_list(int v_visited, int s_count, s_tuple *s_list, double **adj){
+int update_s_list(int v_visited, int s_count, double *s_weights, int* s_vertices, double **adj){
     for (int i = 0; i < s_count; i++){
-        printf("I am comparing table value %f with adjacency value %f%c", s_list[i].low_edge, adj[v_visited][s_list[i].v_num], '\n');
-        if (adj[v_visited][s_list[i].v_num] < s_list[i].low_edge){
-                        s_list[i].low_edge = adj[v_visited][s_list[i].v_num];
-        }
-        
 
+        if (adj[v_visited][s_vertices[i]] < s_weights[i]){
+                        s_weights[i] = adj[v_visited][s_vertices[i]];
+        }
     }
     return 0;
 }
@@ -158,19 +152,18 @@ int update_s_list(int v_visited, int s_count, s_tuple *s_list, double **adj){
 int graph_type_dim(int v_count, int dim, double **adj){
     point_4d *v_array = (point_4d *)malloc(v_count * sizeof(point_4d));
     for (int i = 0; i < v_count; i++){
-        if (dim != 0){
-            if (dim >= 2){
-                v_array[i] = (point_4d) { .x = (((double)random())/((double)(RAND_MAX))), 
+        if (dim != 0){ 
+            v_array[i] = (point_4d) { .x = (((double)random())/((double)(RAND_MAX))), 
                                     .y = (((double)random())/((double)(RAND_MAX))),
                                     .z = 0, .l = 0  };
-            }
+            
+
             if (dim >= 3){
                 v_array[i].z = (((double)random())/((double)(RAND_MAX)));
             }
             if (dim == 4){
                 v_array[i].l = (((double)random())/((double)(RAND_MAX)));
             }
-            printf("x = %f, y = %f, z = %f, l = %f%c", v_array[i].x, v_array[i].y, v_array[i].z, v_array[i].l, '\n');   
         } 
     }
         
@@ -183,14 +176,13 @@ int graph_type_dim(int v_count, int dim, double **adj){
                 if (dim == 0){ 
                     weight = (((double)random())/((double)(RAND_MAX))); 
                 } 
-                else if (dim >= 2) {
+                else {
                     double x_1 = v_array[i].x, y_1 = v_array[i].y, z_1 = v_array[i].z, l_1 = v_array[i].l;
                     double x_2 = v_array[j].x, y_2 = v_array[j].y, z_2 = v_array[j].z, l_2 = v_array[i].l;
                     weight = sqrt((pow((x_1 - x_2), 2)) + (pow((y_1 - y_2), 2)) + (pow((z_1 - z_2), 2)) + (pow((l_1 - l_2), 2)));
                 }
                 adj[j][i] = weight;
                 adj[i][j] = weight;
-                // printf("%f%c", adj[j][i], '\n');
             }
         }
     }
