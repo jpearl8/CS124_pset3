@@ -32,37 +32,37 @@ TODO:
 int main(int argc, char** argv) {
     
     clock_t t = clock();
-   if (argc != 5){
-      printf("Usage: ./randmst int numpoints numtrials dimension");
-      return 1;
-   } 
-   int v_count = atoi(argv[2]);
-   if (v_count <= 0){
-       printf("Invalid number of vertices");
-       return 1;
-   }
-   else if (v_count == 1){
-       return 0;
-   }
-   double *adj[v_count];
-   for (int i = 0; i < v_count; i++){
-      adj[i] = (double *)malloc(v_count * sizeof(double)); 
-   }
-   graph_type_dim(v_count, atoi(argv[4]), adj);   
-   double sum = prims(v_count, adj);
-   for (int i = 0; i < v_count; i++){
-      free(adj[i]); 
-   }
-   t = clock() - t;
-   printf("SUM IS HERE %f%c", sum, '\n');
+    if (argc != 5){
+        printf("Usage: ./randmst int numpoints numtrials dimension");
+        return 1;
+    } 
+    int v_count = atoi(argv[2]);
+    if (v_count <= 0){
+        printf("Invalid number of vertices");
+        return 1;
+    }
+    else if (v_count == 1){
+        return 0;
+    }
+    double *adj[v_count];
+    for (int i = 0; i < v_count; i++){
+        adj[i] = (double *)malloc(v_count * sizeof(double)); 
+    }
+    graph_type_dim(v_count, atoi(argv[4]), adj);   
+    double sum_array = prims_trials(atoi(argv[3]), v_count, adj);
+    for (int i = 0; i < v_count; i++){
+        free(adj[i]); 
+    }
+    t = clock() - t;
+    printf("Vertex count: %d%cDimension count: %d%cMST total: %f%c",  
+            atoi(argv[2]), '\n', atoi(argv[4]), '\n', sum_array, '\n');
 
-   printf("Vertex count: %d%c",  atoi(argv[2]), '\n');
-   printf("Trial count: %d%c",  atoi(argv[3]), '\n');
-   printf("Dimension count: %d%c", atoi(argv[4]), '\n');
-   double cpu_time_used = ((double) (t)) / CLOCKS_PER_SEC ;
-   printf("TIMES %f%c", cpu_time_used, '\n');
-   
-   return 0;
+    printf("Trial count: %d%c",  atoi(argv[3]), '\n');
+
+    double cpu_time_used = ((double) (t)) / CLOCKS_PER_SEC ;
+    printf("Time: %f seconds%c", cpu_time_used, '\n');
+
+    return 0;
    
 }
 
@@ -82,44 +82,48 @@ int main(int argc, char** argv) {
     remove (vertice, value from S)
     */
 
-double prims(int v_count, double **adj){
-    double sum = 0;
-    int s_count = v_count;
-    int *s_vertices = (int *)malloc(v_count * sizeof(int));
-    double *s_weights = (double *)malloc(v_count * sizeof(double));
-    for (int i = 0; i < v_count; i++){
-        s_vertices[i] = i;
-        switch (i){
-            case 0: 
-                s_weights[i] = 0;
-                break;
-            default:
-                s_weights[i] = 5;
-                break;
+double prims_trials(int trials, int v_count, double **adj){
+    double avg_sum = 0;
+    for (int i = 0; i < trials; i ++){
+        double sum = 0;
+        int s_count = v_count;
+        int *s_vertices = (int *)malloc(v_count * sizeof(int));
+        double *s_weights = (double *)malloc(v_count * sizeof(double));
+        for (int i = 0; i < v_count; i++){
+            s_vertices[i] = i;
+            switch (i){
+                case 0: 
+                    s_weights[i] = 0;
+                    break;
+                default:
+                    s_weights[i] = 5;
+                    break;
+            }
+    
         }
-  
-    }
-    while (s_count > 0){
-        int min = findMin(s_count, s_weights);
+        while (s_count > 0){
+            int min = findMin(s_count, s_weights);
 
-        sum += s_weights[min];
+            sum += s_weights[min];
 
-        int v_visited = s_vertices[min];
-        if (min != s_count - 1){
-            s_vertices[min] = s_vertices[s_count - 1];
-            s_weights[min] = s_weights[s_count - 1];
+            int v_visited = s_vertices[min];
+            if (min != s_count - 1){
+                s_vertices[min] = s_vertices[s_count - 1];
+                s_weights[min] = s_weights[s_count - 1];
+                
             
-           
+
+            }
+
+            s_count = s_count - 1;
+            update_s_list(v_visited, s_count, s_weights, s_vertices, adj);
 
         }
-
-        s_count = s_count - 1;
-        update_s_list(v_visited, s_count, s_weights, s_vertices, adj);
-
+        free(s_vertices);
+        free(s_weights);
+        avg_sum += sum;
     }
-    free(s_vertices);
-    free(s_weights);
-    return sum;
+    return (avg_sum / trials);
 }
 
 

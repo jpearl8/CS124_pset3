@@ -19,7 +19,6 @@ typedef struct s_tuple {
 } s_tuple;
 
 int graph_type_dim(int v_count, int dim, double** adj);
-double prims(int v_count, double **adj);
 int findMin(int v_count, s_tuple *s_list);
 int update_s_list(int v_visited, int s_count, s_tuple *s_list, double **adj);
 double prims_trials(int trials, int v_count, double **adj);
@@ -58,7 +57,6 @@ int main(int argc, char** argv) {
    }
    graph_type_dim(v_count, atoi(argv[4]), adj);   
    double sum_array = prims_trials(atoi(argv[3]), v_count, adj);
-//    double sum = prims(v_count, adj);
    for (int i = 0; i < v_count; i++){
       free(adj[i]); 
    }
@@ -128,36 +126,7 @@ double prims_trials(int trials, int v_count, double **adj){
 
 
 
-double prims(int v_count, double **adj){
-    double sum = 0;
-    int s_count = v_count;
-    s_tuple *s_list = (s_tuple *)malloc(v_count * sizeof(s_tuple));
-    for (int i = 0; i < v_count; i++){
-        switch (i){
-            case 0: 
-                s_list[i] = (s_tuple) { .v_num = i, 
-                        .low_edge = 0};
-                break;
-            default:
-                s_list[i] = (s_tuple) { .v_num = i, 
-                        .low_edge = 5};
-                break;
-        }
-    }
-    while (s_count > 0){
-        int min = findMin(s_count, s_list);
-        sum += s_list[min].low_edge;
-        int v_visited = s_list[min].v_num;
-        if (min != s_count - 1){
-            s_list[min] = s_list[s_count - 1];
-        }
-        s_count--;
-        update_s_list(v_visited, s_count, s_list, adj);
 
-    }
-    free(s_list);
-    return sum;
-}
 
 
 
