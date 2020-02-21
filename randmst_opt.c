@@ -44,6 +44,10 @@ int main(int argc, char** argv) {
     else if (v_count == 1){
         return 0;
     }
+    if (atoi(argv[3]) < 1){
+       printf("Invalid number of trials");
+       return 1;
+    }
     double *adj[v_count];
     for (int i = 0; i < v_count; i++){
         adj[i] = (double *)malloc(v_count * sizeof(double)); 
