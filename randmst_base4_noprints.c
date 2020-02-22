@@ -1,8 +1,10 @@
 #include <float.h>
 #include <math.h>
+#include <stdbool.h> 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
 
 typedef struct point_4d {
    double x;
@@ -19,7 +21,8 @@ typedef struct s_tuple {
 int graph_type_dim(int v_count, int dim, double** adj);
 int findMin(int v_count, s_tuple *s_list);
 int update_s_list(int v_visited, int s_count, s_tuple *s_list, double **adj);
-double prims_trials(int trials, int v_count, double **adj);
+double prims_trials(int trials, int v_count, double **adj, bool time);
+int testing(int v_count, int trials, int dimensions, int type);
 
 /*
     TODO:
@@ -31,7 +34,7 @@ double prims_trials(int trials, int v_count, double **adj);
 */
 
 int main(int argc, char** argv) {
-  clock_t t = clock();
+  
   if (argc != 5) {
     printf("Usage: ./randmst int numpoints numtrials dimension %c", '\n');
     return 1;
@@ -48,27 +51,54 @@ int main(int argc, char** argv) {
      printf("Invalid number of trials");
      return 1;
   }
-  srandom(time(NULL));
-  double *adj[v_count];
-  for (int i = 0; i < v_count; i++) {
-    adj[i] = (double *)malloc(v_count * sizeof(double));
+  if (atoi(argv[1]) != 0){
+    for (int i = 0; i < 3; i++){
+        testing(v_count, atoi(argv[3]), atoi(argv[4]), atoi(argv[1]));
+        
+    }
+    printf("Vertex count: %d%cDimension count: %d%cMST ", v_count, '\n', atoi(argv[4]), '\n');
+    printf("Trial count: %d%c",  atoi(argv[3]), '\n');
+    return 0;
+  } else {
+    
+    double *adj[v_count];
+    for (int i = 0; i < v_count; i++) {
+        adj[i] = (double *)malloc(v_count * sizeof(double));
+    }
+    graph_type_dim(v_count, atoi(argv[4]), adj);
+    double sum_array = prims_trials(atoi(argv[3]), v_count, adj, true);
+    for (int i = 0; i < v_count; i++) {
+        free(adj[i]);
+    }
+    
+    printf("Vertex count: %d%cDimension count: %d%cMST total: %f%c",
+            atoi(argv[2]), '\n', atoi(argv[4]), '\n', sum_array, '\n');
+
+    printf("Trial count: %d%c",  atoi(argv[3]), '\n');
+
+
+
+    return 0;
   }
-  graph_type_dim(v_count, atoi(argv[4]), adj);
-  double sum_array = prims_trials(atoi(argv[3]), v_count, adj);
-  for (int i = 0; i < v_count; i++) {
-    free(adj[i]);
-  }
-  t = clock() - t;
-  printf("Vertex count: %d%cDimension count: %d%cMST total: %f%c",
-         atoi(argv[2]), '\n', atoi(argv[4]), '\n', sum_array, '\n');
+}
 
-  printf("Trial count: %d%c",  atoi(argv[3]), '\n');
+int testing(int v_count, int trials, int dimensions, int type){
+    double *adj[v_count];
+    for (int i = 0; i < v_count; i++) {
+        adj[i] = (double *)malloc(v_count * sizeof(double));
+    }
+    graph_type_dim(v_count, dimensions, adj);
+    bool test = (type == 2);
+    double sum_array = prims_trials(trials, v_count, adj, test);
+    for (int i = 0; i < v_count; i++) {
+        free(adj[i]);
+    }
+    if (type == 1){
+         printf("%f%c", sum_array, '\n');
+    }
+   
 
-  double cpu_time_used = ((double) (t)) / CLOCKS_PER_SEC ;
-  printf("Time: %f seconds%c", cpu_time_used, '\n');
-
-  return 0;
-
+    return 0;
 }
 
 /*
@@ -86,9 +116,12 @@ int main(int argc, char** argv) {
     remove (vertex, value from S)
 */
 
-double prims_trials(int trials, int v_count, double **adj) {
+double prims_trials(int trials, int v_count, double **adj, bool test) {
+    srandom(time(NULL));
+    clock_t t = clock();
     double avg_sum = 0;
     for (int i = 0; i < trials; i ++) {
+        
         double sum = 0;
         int s_count = v_count;
         s_tuple *s_list = (s_tuple *)malloc(v_count * sizeof(s_tuple));
@@ -117,7 +150,16 @@ double prims_trials(int trials, int v_count, double **adj) {
         }
         free(s_list);
         avg_sum += sum;
+        
+       
     }
+    t = clock() - t;
+        double cpu_time_used = ((double) (t)) / (CLOCKS_PER_SEC * trials);
+    if (test){
+        // printf("Time: %f seconds%c", cpu_time_used, '\n');
+        printf("%f%c", cpu_time_used, '\n');
+    }
+    
     return (avg_sum / trials);
 }
 
