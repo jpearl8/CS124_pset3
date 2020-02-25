@@ -18,13 +18,13 @@ typedef struct s_tuple {
     double low_edge;
 } s_tuple;
 
-int graph_no_adj(int v_count, int dim, point_4d *v_array);
-int findMin(int v_count, s_tuple *s_list);
-int update_s_list_lack0(int v_visited, int s_count, s_tuple *s_list, long time_to_code);
-// int testing(int v_count, int trials, int dimensions, int type);
-int update_s_list_lack(int v_visited, int s_count, s_tuple *s_list, point_4d *v_array);
-double prims_trials_lack (int trials, int dim, int v_count, point_4d *v_array, bool test, long time_to_code);
 
+int findMin(int v_count, s_tuple *s_list);
+int testing(int v_count, int trials, int dimensions, int type);
+int update_s_list_point(int v_visited, int s_count, s_tuple *s_list, point_4d *v_array);
+double prims_trials (int trials, int dim, int v_count, point_4d *v_array, bool test, double *v0_array);
+int graph_no_adj(int v_count, int dim, point_4d *v_array, double *v0_array);
+int update_s_list_0(int v_visited, int s_count, s_tuple *s_list, double *v0_array);
 /*
     TODO:
     1. Make an S function that creates and fills an S array [(0, MAX)...(n-1, MAX)]
@@ -52,11 +52,14 @@ int main(int argc, char** argv) {
      printf("Invalid number of trials");
      return 1;
   }
-  long time_to_code = time(NULL);
+  srandom(time(NULL));
 
   if (atoi(argv[1]) != 0){
+      if (atoi(argv[1]) == 2){
+          printf("Time!%c",'\n');
+      }
     for (int i = 0; i < 3; i++){
-        // testing(v_count, atoi(argv[3]), atoi(argv[4]), atoi(argv[1]));
+        testing(v_count, atoi(argv[3]), atoi(argv[4]), atoi(argv[1]));
 
     }
     printf("Vertex count: %d%cDimension count: %d%cMST ", v_count, '\n', atoi(argv[4]), '\n');
@@ -64,28 +67,20 @@ int main(int argc, char** argv) {
     return 0;
   } else {
       double sum_array;
-    // if (atoi(argv[4]) != 0){
+
     if (atoi(argv[4]) == 0){
-        sum_array = prims_trials_lack(atoi(argv[3]), atoi(argv[4]), v_count, NULL, true, time_to_code);
+        double *v0_array = (double *)malloc(v_count * sizeof(double));
+        graph_no_adj(v_count, atoi(argv[4]), NULL, v0_array);
+
+        sum_array = prims_trials(atoi(argv[3]), atoi(argv[4]), v_count, NULL, true, v0_array);
+        free(v0_array);
     }
     else {
         point_4d *v_array = (point_4d *)malloc(v_count * sizeof(point_4d));
-        graph_no_adj(v_count, atoi(argv[4]), v_array);
-        sum_array = prims_trials_lack(atoi(argv[3]), atoi(argv[4]), v_count, v_array, true, time_to_code);
+        graph_no_adj(v_count, atoi(argv[4]), v_array, NULL);
+        sum_array = prims_trials(atoi(argv[3]), atoi(argv[4]), v_count, v_array, true, NULL);
         free(v_array);
     }
-
-    // } else {
-    //     double *adj[v_count];
-    //     for (int i = 0; i < v_count; i++) {
-    //         adj[i] = (double *)malloc(v_count * sizeof(double));
-    //     }
-    //     graph_type_dim(v_count, atoi(argv[4]), adj);
-    //     sum_array = prims_trials(atoi(argv[3]), v_count, adj, true);
-    //     for (int i = 0; i < v_count; i++) {
-    //         free(adj[i]);
-    //     }
-    // }
     printf("Vertex count: %d%cDimension count: %d%cMST total: %f%c",
             atoi(argv[2]), '\n', atoi(argv[4]), '\n', sum_array, '\n');
 
@@ -97,24 +92,32 @@ int main(int argc, char** argv) {
   }
 }
 
-// int testing(int v_count, int trials, int dimensions, int type){
-//     double *adj[v_count];
-//     for (int i = 0; i < v_count; i++) {
-//         adj[i] = (double *)malloc(v_count * sizeof(double));
-//     }
-//     graph_type_dim(v_count, dimensions, adj);
-//     bool test = (type == 2);
-//     double sum_array = prims_trials(trials, v_count, adj, test);
-//     for (int i = 0; i < v_count; i++) {
-//         free(adj[i]);
-//     }
-//     if (type == 1){
-//          printf("%f%c", sum_array, '\n');
-//     }
+int testing(int v_count, int trials, int dimensions, int type){
+    double *adj[v_count];
+    double sum_array;
+    bool test = (type == 2);
+    
+    if (dimensions == 0){
+        double *v0_array = (double *)malloc(v_count * sizeof(double));
+        graph_no_adj(v_count, dimensions, NULL, v0_array);
+
+        sum_array = prims_trials(1, dimensions, v_count, NULL, test, v0_array);
+        free(v0_array);
+    }
+    else {
+        point_4d *v_array = (point_4d *)malloc(v_count * sizeof(point_4d));
+        graph_no_adj(v_count, dimensions, v_array, NULL);
+        sum_array = prims_trials(1, dimensions, v_count, v_array, test, NULL);
+        free(v_array);
+    }
+    
+    if (type == 1){
+         printf("%f%c", sum_array, '\n');
+    }
 
 
-//     return 0;
-// }
+    return 0;
+}
 
 /*
     1. Create S [(0, 0), (1, MAX)]...
@@ -133,7 +136,7 @@ int main(int argc, char** argv) {
 
 
 
-double prims_trials_lack (int trials, int dim, int v_count, point_4d *v_array, bool test, long time_to_code) {
+double prims_trials (int trials, int dim, int v_count, point_4d *v_array, bool test, double *v0_array) {
     clock_t t = clock();
     double avg_sum = 0;
     for (int i = 0; i < trials; i ++) {
@@ -162,10 +165,9 @@ double prims_trials_lack (int trials, int dim, int v_count, point_4d *v_array, b
             }
             s_count--;
             if (dim != 0){
-                update_s_list_lack(v_visited, s_count, s_list, v_array);
+                update_s_list_point(v_visited, s_count, s_list, v_array);
             } else {
-                update_s_list_lack0(v_visited, s_count, s_list, time_to_code);
-            // update_s_list(v_visited, s_count, s_list, adj);
+                update_s_list_0(v_visited, s_count, s_list, v0_array);
             }
 
 
@@ -178,10 +180,9 @@ double prims_trials_lack (int trials, int dim, int v_count, point_4d *v_array, b
     t = clock() - t;
         double cpu_time_used = ((double) (t)) / (CLOCKS_PER_SEC * trials);
     if (test){
-        // printf("Time: %f seconds%c", cpu_time_used, '\n');
+        
         printf("%f%c", cpu_time_used, '\n');
     }
-
     return (avg_sum / trials);
 }
 
@@ -199,7 +200,7 @@ int findMin(int s_count, s_tuple *s_list) {
 
 
 
-int update_s_list_lack(int v_visited, int s_count, s_tuple *s_list, point_4d *v_array) {
+int update_s_list_point(int v_visited, int s_count, s_tuple *s_list, point_4d *v_array) {
     double weight, x_i, y_i, z_i, l_i;
     double x_v = v_array[v_visited].x, y_v = v_array[v_visited].y, z_v = v_array[v_visited].z, l_v = v_array[v_visited].l;   
     for (int i = 0; i < s_count; i++) {
@@ -217,11 +218,12 @@ int update_s_list_lack(int v_visited, int s_count, s_tuple *s_list, point_4d *v_
 }
 
 
-int update_s_list_lack0(int v_visited, int s_count, s_tuple *s_list, long time_to_code) {
+
+
+int update_s_list_0(int v_visited, int s_count, s_tuple *s_list, double *v0_array) {
     double weight;
     for (int i = 0; i < s_count; i++) {
-        // srandom(i * v_visited * time_to_code);
-        weight = (((double)random())/((double)(RAND_MAX)));
+        weight = ((v0_array[i] + v0_array[v_visited]) / 2);
         if (weight < s_list[i].low_edge) {
             s_list[i].low_edge = weight;
         }
@@ -233,7 +235,8 @@ int update_s_list_lack0(int v_visited, int s_count, s_tuple *s_list, long time_t
 
 
 
-int graph_no_adj(int v_count, int dim, point_4d *v_array) {
+
+int graph_no_adj(int v_count, int dim, point_4d *v_array, double *v0_array) {
     for (int i = 0; i < v_count; i++) {
         if (dim != 0) {
             if (v_array){
@@ -247,7 +250,10 @@ int graph_no_adj(int v_count, int dim, point_4d *v_array) {
                 if (dim == 4) {
                     v_array[i].l = (((double)random())/((double)(RAND_MAX)));
                 }
-            }
+            } 
+        } else {
+            v0_array[i] = (((double)random())/((double)(RAND_MAX)));
+     
         }
     }
     return 0;
