@@ -22,6 +22,7 @@ int graph_no_adj(int v_count, int dim, point_4d *v_array);
 int graph_type_dim(int v_count, int dim, double** adj);
 int findMin(int v_count, s_tuple *s_list);
 int update_s_list(int v_visited, int s_count, s_tuple *s_list, double **adj);
+int update_s_list_lack0(int v_visited, int s_count, s_tuple *s_list);
 double prims_trials(int trials, int v_count, double **adj, bool time);
 int testing(int v_count, int trials, int dimensions, int type);
 int update_s_list_lack(int v_visited, int s_count, s_tuple *s_list, point_4d *v_array);
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
      printf("Invalid number of trials");
      return 1;
   }
-  srandom(time(NULL));
+//   srandom(time(NULL));
   if (atoi(argv[1]) != 0){
     for (int i = 0; i < 3; i++){
         testing(v_count, atoi(argv[3]), atoi(argv[4]), atoi(argv[1]));
@@ -203,6 +204,7 @@ double prims_trials_lack (int trials, int dim, int v_count, point_4d *v_array, b
             if (dim != 0){
                 update_s_list_lack(v_visited, s_count, s_list, v_array);
             } else {
+                update_s_list_lack0(v_visited, s_count, s_list);
             // update_s_list(v_visited, s_count, s_list, adj);
             }
 
@@ -261,6 +263,20 @@ int update_s_list_lack(int v_visited, int s_count, s_tuple *s_list, point_4d *v_
     return 0;
 }
 
+
+int update_s_list_lack0(int v_visited, int s_count, s_tuple *s_list) {
+    double weight;
+    for (int i = 0; i < s_count; i++) {
+        srandom(i * v_visited);
+        weight = (((double)random())/((double)(RAND_MAX)));
+        if (weight < s_list[i].low_edge) {
+            s_list[i].low_edge = weight;
+        }
+    }
+    return 0;
+}
+
+
 int graph_type_dim(int v_count, int dim, double **adj) {
     point_4d *v_array = (point_4d *)malloc(v_count * sizeof(point_4d));
     for (int i = 0; i < v_count; i++) {
@@ -306,16 +322,18 @@ int graph_type_dim(int v_count, int dim, double **adj) {
 int graph_no_adj(int v_count, int dim, point_4d *v_array) {
     for (int i = 0; i < v_count; i++) {
         if (dim != 0) {
-            v_array[i] = (point_4d) { .x = (((double)random())/((double)(RAND_MAX))),
-                                      .y = (((double)random())/((double)(RAND_MAX))),
-                                      .z = 0, .l = 0  };
+            if (v_array){
+                v_array[i] = (point_4d) { .x = (((double)random())/((double)(RAND_MAX))),
+                                        .y = (((double)random())/((double)(RAND_MAX))),
+                                        .z = 0, .l = 0  };
 
-            // (double)rand() / (double)((unsigned)RAND_MAX + 1)
-            if (dim >= 3) {
-                v_array[i].z = (((double)random())/((double)(RAND_MAX)));
-            }
-            if (dim == 4) {
-                v_array[i].l = (((double)random())/((double)(RAND_MAX)));
+                // (double)rand() / (double)((unsigned)RAND_MAX + 1)
+                if (dim >= 3) {
+                    v_array[i].z = (((double)random())/((double)(RAND_MAX)));
+                }
+                if (dim == 4) {
+                    v_array[i].l = (((double)random())/((double)(RAND_MAX)));
+                }
             }
         }
     }
