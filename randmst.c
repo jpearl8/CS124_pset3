@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-
 typedef struct point_4d {
    double x;
    double y;
@@ -24,145 +23,98 @@ typedef struct edge_node {
     struct edge_node *next;
 } edge_node;
 
-int findMin(int v_count, s_tuple *s_list);
-int testing(int v_count, int trials, int dimensions, int type);
-int update_s_list_point(int v_visited, int s_count, s_tuple *s_list, point_4d *v_array);
-double prims_trials (int trials, int dim, int v_count, point_4d *v_array, bool test, edge_node **v0_array);
-int graph_no_adj(int v_count, int dim, point_4d *v_array, edge_node **v0_array);
-int update_s_list_0(int v_visited, int s_count, s_tuple *s_list, edge_node **v0_array);
+int find_min(int v_count, s_tuple *s_list);
 double find_weight(int i, int j, edge_node **v0_array);
-/*
-    TODO:
-    1. Make an S function that creates and fills an S array [(0, MAX)...(n-1, MAX)]
-    2. Bring Prim function to life
-    2.1 Determine what is the max n input for Prim function to work
-    3. Averaging method that runs prim >=5 times and averages
-    4. 0 method for testing: runs not just n, but different values of n that is less than our max
-*/
+int graph(int v_count, int dim, point_4d *v_array, edge_node **v0_array);
+double prims(int trials, int dim, int v_count, point_4d *v_array, edge_node **v0_array);
+int update_s_list_point(int v_visited, int s_count, s_tuple *s_list, point_4d *v_array);
+int update_s_list_0(int v_visited, int s_count, s_tuple *s_list, edge_node **v0_array);
 
 int main(int argc, char** argv) {
 
+  // Ensure correct usage
   if (argc != 5) {
-    printf("Usage: ./randmst int numpoints numtrials dimension %c", '\n');
+    printf("Usage: ./randmst int numpoints numtrials dimension \n");
     return 1;
   }
   int v_count = atoi(argv[2]);
   if (v_count <= 0) {
-     printf("Invalid number of vertices");
+     printf("Invalid number of vertices\n");
      return 1;
   }
   else if (v_count == 1) {
      return 0;
   }
   if (atoi(argv[3]) < 1) {
-     printf("Invalid number of trials");
+     printf("Invalid number of trials\n");
      return 1;
   }
+  if (atoi(argv[4]) == 1) {
+     printf("Invalid number of dimensions\n");
+     return 1;
+  }
+
+  // Seed RNG with current time
   srandom(time(NULL));
 
-  if (atoi(argv[1]) != 0){
-      if (atoi(argv[1]) == 2){
-          printf("Time!%c",'\n');
+  double sum_array;
+
+  // Dimension 0 requires storing edge weight information
+  if (atoi(argv[4]) == 0){
+      // Initialize an array of linked lists
+      edge_node **v0_array = (edge_node **)malloc(v_count * sizeof(edge_node));
+      for (int i = 0; i < v_count; i++) {
+        v0_array[i] = NULL;
       }
-    for (int i = 0; i < 3; i++){
-        testing(v_count, atoi(argv[3]), atoi(argv[4]), atoi(argv[1]));
+      // Construct the graph
+      graph(v_count, atoi(argv[4]), NULL, v0_array);
 
-    }
-    printf("Vertex count: %d%cDimension count: %d%cMST ", v_count, '\n', atoi(argv[4]), '\n');
-    printf("Trial count: %d%c",  atoi(argv[3]), '\n');
-    return 0;
-  } else {
-      double sum_array;
-
-    if (atoi(argv[4]) == 0){
-        edge_node **v0_array = (edge_node **)malloc(v_count * sizeof(edge_node));
-        for (int i = 0; i < v_count; i++) {
-          v0_array[i] = NULL;
-        }
-        graph_no_adj(v_count, atoi(argv[4]), NULL, v0_array);
-
-        sum_array = prims_trials(atoi(argv[3]), atoi(argv[4]), v_count, NULL, true, v0_array);
-        for (int i = 0; i < v_count; i++) {
-            edge_node *temp = v0_array[i];
-            while (temp) {
-                temp = v0_array[i]->next;
-                free(v0_array[i]);
-                v0_array[i] = temp;
-            }
-        }
-        free(v0_array);
-    }
-    else {
-        point_4d *v_array = (point_4d *)malloc(v_count * sizeof(point_4d));
-        graph_no_adj(v_count, atoi(argv[4]), v_array, NULL);
-        sum_array = prims_trials(atoi(argv[3]), atoi(argv[4]), v_count, v_array, true, NULL);
-        free(v_array);
-    }
-    printf("Vertex count: %d%cDimension count: %d%cMST total weight: %f%c",
-            atoi(argv[2]), '\n', atoi(argv[4]), '\n', sum_array, '\n');
-
-    printf("Trial count: %d%c",  atoi(argv[3]), '\n');
-
-
-
-    return 0;
+      // Extract the weight of the MST using Prim's and free the edge weight array
+      sum_array = prims(atoi(argv[3]), atoi(argv[4]), v_count, NULL, v0_array);
+      for (int i = 0; i < v_count; i++) {
+          edge_node *temp = v0_array[i];
+          while (temp) {
+              temp = v0_array[i]->next;
+              free(v0_array[i]);
+              v0_array[i] = temp;
+          }
+      }
+      free(v0_array);
   }
+  // For dimensions 2, 3, and 4, we only need to store the points
+  else {
+      // Construct the graph and extract the weight of the MST using Prim's, free the array
+      point_4d *v_array = (point_4d *)malloc(v_count * sizeof(point_4d));
+      graph(v_count, atoi(argv[4]), v_array, NULL);
+      sum_array = prims(atoi(argv[3]), atoi(argv[4]), v_count, v_array, NULL);
+      free(v_array);
+  }
+
+  printf("Number of vertices: %d%cNumber of dimensions: %d%cMST total weight: %f%c",
+          atoi(argv[2]), '\n', atoi(argv[4]), '\n', sum_array, '\n');
+  printf("Number of trials: %d%c",  atoi(argv[3]), '\n');
+
+  return 0;
+
 }
 
-int testing(int v_count, int trials, int dimensions, int type){
-    double sum_array;
-    bool test = (type == 2);
-
-    if (dimensions == 0){
-        edge_node **v0_array = (edge_node **)malloc(v_count * sizeof(edge_node));
-        graph_no_adj(v_count, dimensions, NULL, v0_array);
-
-        sum_array = prims_trials(1, dimensions, v_count, NULL, test, v0_array);
-        free(v0_array);
-    }
-    else {
-        point_4d *v_array = (point_4d *)malloc(v_count * sizeof(point_4d));
-        graph_no_adj(v_count, dimensions, v_array, NULL);
-        sum_array = prims_trials(1, dimensions, v_count, v_array, test, NULL);
-        free(v_array);
-    }
-
-    if (type == 1){
-         printf("%f%c", sum_array, '\n');
-    }
-
-
-    return 0;
-}
-
-/*
-    1. Create S [(0, 0), (1, MAX)]...
-    2. Create visited {}, and sum = 0
-    3. make counter n = v_count
-    while (s_count > 0)
-    4. add vertex with smallest value to V
-    5. add the value to sum
-    6. "remove" (vertex, value from S)
-        a. can't actually remove, just move last element to element being taken out
-        b. subtract one from s_count
-    7. s_count--
-    8. update S with new vertices
-    remove (vertex, value from S)
-*/
-
-
-
-double prims_trials (int trials, int dim, int v_count, point_4d *v_array, bool test, edge_node **v0_array) {
+// Implement Prim's algorithm, allowing for multiple trials
+double prims(int trials, int dim, int v_count, point_4d *v_array, edge_node **v0_array) {
+    // Time the execution of this function
     clock_t t = clock();
-    double avg_sum = 0;
-    double max = 0;
-    for (int i = 0; i < trials; i ++) {
 
+    double avg_sum = 0;
+
+    // Execute and average the result of multiple trials (as input by the user)
+    for (int i = 0; i < trials; i ++) {
         double sum = 0;
         int s_count = v_count;
         s_tuple *s_list = (s_tuple *)malloc(v_count * sizeof(s_tuple));
+
+        // Construct list of vertices and their lowest edge weight
         for (int i = 0; i < v_count; i++) {
             switch (i) {
+                // By default, we pick the first vertex in our graph
                 case 0:
                     s_list[i] = (s_tuple) { .v_num = i,
                                             .low_edge = 0 };
@@ -173,11 +125,10 @@ double prims_trials (int trials, int dim, int v_count, point_4d *v_array, bool t
                     break;
             }
         }
+
+        // Prim's
         while (s_count > 0) {
-            int min = findMin(s_count, s_list);
-            if (max < s_list[min].low_edge) {
-                max = s_list[min].low_edge;
-            }
+            int min = find_min(s_count, s_list);
             sum += s_list[min].low_edge;
             int v_visited = s_list[min].v_num;
             if (min != s_count - 1) {
@@ -189,25 +140,18 @@ double prims_trials (int trials, int dim, int v_count, point_4d *v_array, bool t
             } else {
                 update_s_list_0(v_visited, s_count, s_list, v0_array);
             }
-
-
         }
         free(s_list);
         avg_sum += sum;
-
-
     }
     t = clock() - t;
-        double cpu_time_used = ((double) (t)) / (CLOCKS_PER_SEC * trials);
-    if (test){
+    double cpu_time_used = ((double) (t)) / (CLOCKS_PER_SEC * trials);
 
-        printf("time: %f%c", cpu_time_used, '\n');
-    }
-    printf("max edge weight in MST: %f\n", max);
     return (avg_sum / trials);
 }
 
-int findMin(int s_count, s_tuple *s_list) {
+// Find the vertex with the minimum edge
+int find_min(int s_count, s_tuple *s_list) {
     double n = s_list[0].low_edge;
     int index = 0;
     for (int i = 1; i < s_count; i++) {
@@ -219,8 +163,7 @@ int findMin(int s_count, s_tuple *s_list) {
     return index;
 }
 
-
-
+// For dimensions 2, 3, and 4, update minimum weight of edges as needed
 int update_s_list_point(int v_visited, int s_count, s_tuple *s_list, point_4d *v_array) {
     double weight, x_i, y_i, z_i, l_i;
     double x_v = v_array[v_visited].x, y_v = v_array[v_visited].y, z_v = v_array[v_visited].z, l_v = v_array[v_visited].l;
@@ -238,10 +181,12 @@ int update_s_list_point(int v_visited, int s_count, s_tuple *s_list, point_4d *v
     return 0;
 }
 
+// For dimension 0, find the weight of edge (i, j) by searching the array of linked lists
 double find_weight(int i, int j, edge_node **v0_array) {
-  if (!v0_array[i]) {
-    return 5;
-  }
+    if (!v0_array[i]) {
+      // Return 5 if edge is not found
+      return 5;
+    }
     edge_node *temp = v0_array[i];
     while (temp) {
         if (temp->v_num == j) {
@@ -252,7 +197,7 @@ double find_weight(int i, int j, edge_node **v0_array) {
     return 5;
 }
 
-
+// For dimension 0, update minimum weight of edges as needed
 int update_s_list_0(int v_visited, int s_count, s_tuple *s_list, edge_node **v0_array) {
     double weight;
     for (int i = 0; i < s_count; i++) {
@@ -272,8 +217,10 @@ int update_s_list_0(int v_visited, int s_count, s_tuple *s_list, edge_node **v0_
     return 0;
 }
 
-
-int graph_no_adj(int v_count, int dim, point_4d *v_array, edge_node **v0_array) {
+// Construct the random graph
+int graph(int v_count, int dim, point_4d *v_array, edge_node **v0_array) {
+    // For dimension 0, we use a cutoff value to "throw" away edges that likely won't
+    // form part of the final MST. This optimizes for space.
     double cutoff = 5;
     if (v_count > 140000) {
         cutoff = (3.0/10.0) * (1/(pow(v_count, 2.0/3.0)));
@@ -287,10 +234,12 @@ int graph_no_adj(int v_count, int dim, point_4d *v_array, edge_node **v0_array) 
     else if (v_count > 1000) {
         cutoff = (1/(pow(v_count, 2.0/3.0)));
     }
-    printf("cutoff: %f\n", cutoff);
+
+    // We want v_count number of vertices
     for (int i = 0; i < v_count; i++) {
+        // For dimensions 2, 3, and 4, it suffices to generate the random points only
         if (dim != 0) {
-            if (v_array){
+            if (v_array) {
                 v_array[i] = (point_4d) { .x = (((double)random())/((double)(RAND_MAX))),
                                         .y = (((double)random())/((double)(RAND_MAX))),
                                         .z = 0, .l = 0  };
@@ -302,22 +251,29 @@ int graph_no_adj(int v_count, int dim, point_4d *v_array, edge_node **v0_array) 
                     v_array[i].l = (((double)random())/((double)(RAND_MAX)));
                 }
             }
-        } else {
+        }
+        // For dimension 0, we store edge weights only
+        else {
             for (int j = i; j < v_count; j++) {
+                // Don't waste space on edges from i to i
                 if (i == j) {
                   continue;
                 }
                 edge_node *node = (edge_node *)malloc(sizeof(edge_node));
                 node->weight = (((double)random())/((double)(RAND_MAX)));
+
+                // Don't store edges whose weight is above the cutoff value
                 if (node->weight > cutoff) {
                     free(node);
                     continue;
                 }
+
                 node->v_num = j;
                 node->next = v0_array[i];
                 v0_array[i] = node;
             }
         }
     }
+
     return 0;
 }
