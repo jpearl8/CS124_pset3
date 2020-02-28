@@ -2,4 +2,4 @@
 
 ## Instructions
 * Clone this repo and, within it, run `make` to compile
-* Usage: `./randmst int numpoints numtrials dimension`
+* Usage: `./randmst 0 numpoints numtrials dimension`

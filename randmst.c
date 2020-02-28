@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
   // Ensure correct usage
   if (argc != 5) {
-    printf("Usage: ./randmst int numpoints numtrials dimension \n");
+    printf("Usage: ./randmst 0 numpoints numtrials dimension \n");
     return 1;
   }
   int v_count = atoi(argv[2]);
