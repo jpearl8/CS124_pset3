@@ -90,9 +90,9 @@ int main(int argc, char** argv) {
       free(v_array);
   }
 
-  printf("Number of vertices: %d%cNumber of dimensions: %d%cMST total weight: %f%c",
-          atoi(argv[2]), '\n', atoi(argv[4]), '\n', sum_array, '\n');
-  printf("Number of trials: %d%c",  atoi(argv[3]), '\n');
+  printf("MST total weight: %f\n\nNumber of vertices: %d\nNumber of dimensions: %d\n",
+          sum_array, atoi(argv[2]), atoi(argv[4]));
+  printf("Number of trials: %d\n",  atoi(argv[3]));
 
   return 0;
 
@@ -146,6 +146,7 @@ double prims(int trials, int dim, int v_count, point_4d *v_array, edge_node **v0
     }
     t = clock() - t;
     double cpu_time_used = ((double) (t)) / (CLOCKS_PER_SEC * trials);
+    printf("Runtime in seconds: %f\n", cpu_time_used);
 
     return (avg_sum / trials);
 }
